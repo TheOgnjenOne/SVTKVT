@@ -1,0 +1,155 @@
+.requests-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.page-title {
+  text-align: center;
+  margin-bottom: 20px;
+  color: #ffffff;
+}
+
+.requests-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.request-card {
+  background-color: #1f1f1f;
+  padding: 15px 20px;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+  transition: opacity 0.5s ease, transform 0.3s ease;
+}
+
+.request-card:hover {
+  transform: translateY(-2px);
+}
+
+.request-info {
+  flex: 1;
+}
+
+.request-info .email {
+  font-weight: bold;
+  color: #fff;
+  font-size: 16px;
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.btn {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s ease;
+  white-space: nowrap;
+}
+
+.btn.accept {
+  background-color: #28a745;
+  color: #fff;
+}
+
+.btn.accept:hover {
+  background-color: #218838;
+}
+
+.btn.reject {
+  background-color: #dc3545;
+  color: #fff;
+}
+
+.btn.reject:hover {
+  background-color: #b22222;
+}
+
+.reject-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 8px;
+  flex-wrap: wrap;
+}
+
+.reject-input {
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1px solid #444;
+  background-color: #2a2a2a;
+  color: #fff;
+  font-size: 14px;
+  width: 200px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.reject-input:focus {
+  border-color: #dc3545;
+}
+
+.btn.confirm-reject {
+  background-color: #dc3545;
+  color: #fff;
+}
+
+.btn.confirm-reject:hover {
+  background-color: #b22222;
+}
+
+.btn.cancel {
+  background-color: #6c757d;
+  color: #fff;
+}
+
+.btn.cancel:hover {
+  background-color: #5a6268;
+}
+
+.no-data {
+  text-align: center;
+  color: #ccc;
+  font-style: italic;
+}
+
+.loader-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 20px 0;
+}
+
+.loader {
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #007bff;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 10px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-message {
+  color: #dc3545;
+  font-size: 13px;
+  margin-top: 4px;
+}

@@ -1,0 +1,47 @@
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="text-white">Predstojeći događaji na lokaciji: {{ locationName }}</h3>
+  </div>
+
+  <p *ngIf="loading" class="text-white">Učitavanje događaja...</p>
+  <p *ngIf="errorMessage && !loading" class="text-danger">{{ errorMessage }}</p>
+
+  <div *ngIf="!loading && futureEvents.length === 0 && !errorMessage" class="alert alert-info">
+    Trenutno nema zakazanih budućih događaja za ovu lokaciju.
+  </div>
+
+  <div class="row g-3">
+    <div class="col-md-12" *ngFor="let event of futureEvents">
+      <div class="location-card card shadow-sm">
+
+        <div class="card-body p-0 d-flex">
+          <div class="details-text p-4 flex-grow-1">
+            <h5>{{ event.name }}</h5>
+            <p><strong>Tip:</strong> {{ event.type }}</p>
+            <p>
+              <i class="fas fa-calendar-alt me-2"></i>
+              {{ event.date | date: 'dd.MM.yyyy HH:mm' }}
+            </p>
+
+            <button class="btn btn-link p-0 mt-2" (click)="event.showDetails = !event.showDetails">
+              <span [ngClass]="{'rotate': event.showDetails}">&#9660;</span>
+            </button>
+
+            <div class="details" *ngIf="event.showDetails">
+              <p><strong>Adresa:</strong> {{ event.address }}</p>
+              <p>
+                <strong>Cena:</strong>
+                {{ event.price === 0 || event.price === null ? 'Besplatno' : (event.price | currency: 'RSD':'symbol') }}
+              </p>
+              <p><strong>Redovan:</strong> {{ event.recurrent ? 'Da' : 'Ne' }}</p>
+            </div>
+          </div>
+
+          <div class="location-image-wrapper" *ngIf="event.image">
+            <img [src]="'http://localhost:8080/uploads/' + event.image.path" alt="{{ event.name }}" class="img-fluid location-image-cover">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

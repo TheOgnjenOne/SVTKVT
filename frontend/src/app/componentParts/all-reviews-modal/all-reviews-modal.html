@@ -1,0 +1,135 @@
+<div class="modal-content card p-4 review-all-modal">
+
+  <h4 class="mb-3 text-black">Sve recenzije za {{ locationName }} </h4>
+
+  <div *ngIf="loading" class="alert alert-info text-center">
+    Učitavanje recenzija...
+  </div>
+
+  <div *ngIf="error" class="alert alert-danger">
+    **Greška:** {{ error }}
+  </div>
+
+  <div *ngIf="!loading && !error">
+    <div *ngIf="reviews.length === 0" class="alert alert-warning text-center">
+      Nema utisaka za prikaz za ovu lokaciju.
+    </div>
+
+    <div *ngIf="reviews.length > 0">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <p class="small text-muted mb-0">Broj recenzija: {{ reviews.length }}</p>
+
+        <div class="sort-controls d-flex align-items-center">
+          <label for="sortOrder" class="form-label mb-0 me-2 small text-muted">Sortiraj po:</label>
+          <select id="sortOrder" [(ngModel)]="sortMode" (change)="sortReviews()" class="form-select form-select-sm">
+            <option value="date-desc">Datumu (Najnovije)</option>
+            <option value="date-asc">Datumu (Najstarije)</option>
+            <option value="rating-desc">Oceni (Najviša)</option>
+            <option value="rating-asc">Oceni (Najniža)</option>
+          </select>
+        </div>
+      </div>
+      <div class="all-reviews-list">
+
+        <div *ngFor="let review of reviews"
+             class="review-item card mb-4 p-3 shadow-sm"
+             [ngClass]="{
+               'border-secondary': review.isHidden,
+               'deleting-out': reviewToDeleteId === review.id && isDeleting
+             }">
+
+          <div class="review-actions" *ngIf="isManagerOrAdmin">
+            <button class="btn btn-icon-sm text-warning" [title]="review.isHidden ? 'Prikaži utisak' : 'Sakrij utisak'"
+                    (click)="toggleHideReview(review.id, review.isHidden)">
+              <i class="fas" [ngClass]="review.isHidden ? 'fa-eye' : 'fa-eye-slash'"></i>
+            </button>
+            <button class="btn btn-icon-sm text-danger" title="Ukloni utisak"
+                    (click)="initiateDelete(review.id)">
+              <i class="fas fa-trash-alt"></i>
+            </button>
+          </div>
+
+          <div class="review-header d-flex justify-content-between align-items-center mb-2">
+            <span class="user-info">
+              <strong>{{ review.userName }}</strong>
+              <small class="text-muted ms-2">({{ review.submissionDate | date:'dd.MM.yyyy HH:mm' }})</small>
+              <span *ngIf="review.isHidden" class="badge bg-secondary ms-2 small">Sakriveno</span>
+            </span>
+            <span class="badge bg-primary fs-6">
+              {{ review.overallRating | number:'1.1-1' }} / 10
+            </span>
+          </div>
+
+          <div class="review-body">
+            <p class="mb-2">{{ review.commentText }}</p>
+            <div *ngIf="review.reviewedEventId" class="mt-2 small text-secondary">
+              <span class="ms-3">(Događaj održan {{ review.eventCount || 0 }} puta do ovog utiska)</span>
+            </div>
+            <div class="comments-section mt-3 pt-3 border-top border-secondary">
+              <h6 class="small text-muted mb-2">Komentari:</h6>
+
+              <button *ngIf="isManagerOrAdmin"
+                      class="btn btn-sm btn-link text-info p-0 mb-2"
+                      (click)="toggleReply(review.id, null)">
+                <i class="fas fa-reply me-1"></i> {{ replyingToReviewId === review.id && replyingToCommentId === null ? 'Sakrij formu' : 'Odgovori na utisak' }}
+              </button>
+
+              <ng-container *ngIf="replyingToReviewId === review.id && replyingToCommentId === null">
+                <div *ngIf="!isSubmittingComment" class="mb-3 p-3 border rounded bg-light">
+                  <textarea [(ngModel)]="newCommentText" rows="2" class="form-control mb-2" placeholder="Napišite odgovor..."></textarea>
+                  <div class="d-flex justify-content-end">
+                    <button class="btn btn-sm btn-primary" [disabled]="!newCommentText" (click)="submitComment()">Pošalji</button>
+                  </div>
+                </div>
+
+                <div *ngIf="isSubmittingComment"
+                     class="d-flex flex-column justify-content-center align-items-center mb-3 p-3 border rounded bg-light"
+                     style="min-height: 90px;">
+                  <div class="text-center text-primary">
+                    <i class="fas fa-spinner fa-spin fa-2x"></i>
+                    <p class="small mt-1 mb-0">Slanje komentara...</p>
+                  </div>
+                </div>
+              </ng-container>
+
+              <app-comment-tree *ngIf="review.comments?.length"
+                                [comments]="review.comments"
+                                [currentUser]="currentUser"
+                                [isManagerOrAdmin]="isManagerOrAdmin"
+                                [reviewId]="review.id"
+                                [replyingToReviewId]="replyingToReviewId"
+                                [replyingToCommentId]="replyingToCommentId"
+                                [newCommentText]="newCommentText"
+                                (newCommentTextChange)="onNewCommentTextChange($event)"
+                                (toggleReplyEvent)="toggleReply($event.reviewId, $event.commentId)"
+                                (submitCommentEvent)="submitComment()">
+              </app-comment-tree>
+
+              <div *ngIf="!review.comments?.length && (replyingToReviewId === null || replyingToCommentId !== null) && !isSubmittingComment" class="small text-muted">
+                Nema komentara.
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="reviewToDeleteId === review.id && !isDeleting" class="confirmation-overlay">
+            <div class="confirmation-box">
+              <p>Da li ste sigurni da želite trajno ukloniti ovu recenziju?<br><small class="text-danger">Ocena se PONIŠTAVA!</small></p>
+              <div class="confirmation-buttons">
+                <button (click)="cancelDelete()" class="btn btn-light">Odustani</button>
+                <button (click)="confirmDelete()" class="btn btn-danger">
+                  Potvrdi brisanje
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="d-flex justify-content-end gap-2 mt-4">
+    <button class="btn btn-secondary" (click)="closeModal.emit()">
+      Zatvori
+    </button>
+  </div>
+</div>

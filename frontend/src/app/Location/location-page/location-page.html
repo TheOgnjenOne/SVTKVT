@@ -1,0 +1,266 @@
+<div class="container mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3>Lista Mesta</h3>
+
+    <div *ngIf="currentUser?.role === 'ADMIN'">
+      <button class="btn btn-dark" (click)="showAddForm = true">
+        Dodaj lokaciju
+      </button>
+    </div>
+  </div>
+
+  <div class="row mb-4 g-2">
+    <div class="col-md-4">
+      <input
+        type="text"
+        [(ngModel)]="searchName"
+        placeholder="Pretraži po Nazivu..."
+        class="form-control"
+      >
+    </div>
+    <div class="col-md-4">
+      <input
+        type="text"
+        [(ngModel)]="searchAddress"
+        placeholder="Pretraži po Adresi..."
+        class="form-control"
+      >
+    </div>
+    <div class="col-md-4">
+      <input
+        type="text"
+        [(ngModel)]="searchType"
+        placeholder="Pretraži po Tipu..."
+        class="form-control"
+      >
+    </div>
+  </div>
+  <div class="modal-overlay" *ngIf="showAddForm">
+    <div class="modal-content card p-3">
+      <h4 class="mb-3">Nova lokacija</h4>
+      <form (ngSubmit)="addLocation()">
+        <div class="mb-2">
+          <input type="text" [(ngModel)]="newLocation.name" name="name" placeholder="Naziv" required class="form-control">
+        </div>
+        <div class="mb-2">
+          <input type="text" [(ngModel)]="newLocation.address" name="address" placeholder="Adresa" required class="form-control">
+        </div>
+        <div class="mb-2">
+          <input type="text" [(ngModel)]="newLocation.type" name="type" placeholder="Tip" required class="form-control">
+        </div>
+        <div class="mb-2">
+          <textarea [(ngModel)]="newLocation.description" name="description" placeholder="Opis" class="form-control"></textarea>
+        </div>
+        <div class="mb-2">
+          <label for="image" class="form-label">Slika (opciono)</label>
+          <input type="file" (change)="onFileSelected($event)" class="form-control" accept="image/*">
+        </div>
+        <div class="d-flex justify-content-end gap-2 mt-3">
+          <button type="button" class="btn btn-secondary" (click)="showAddForm = false">Otkaži</button>
+          <button type="submit" class="btn btn-success">Sačuvaj</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showEditForm && editingLocation">
+    <div class="modal-content card p-3">
+      <h4 class="mb-3">Izmeni lokaciju: {{ editingLocation.name }}</h4>
+      <form (ngSubmit)="saveLocationEdit()">
+        <div class="mb-2">
+          <input type="text" [(ngModel)]="editingLocation.name" name="editName" placeholder="Naziv" required class="form-control">
+        </div>
+        <div class="mb-2">
+          <input type="text" [(ngModel)]="editingLocation.address" name="editAddress" placeholder="Adresa" required class="form-control">
+        </div>
+        <div class="mb-2">
+          <input type="text" [(ngModel)]="editingLocation.type" name="editType" placeholder="Tip" required class="form-control">
+        </div>
+        <div class="mb-2">
+          <textarea [(ngModel)]="editingLocation.description" name="editDescription" placeholder="Opis" class="form-control"></textarea>
+        </div>
+        <div class="mb-2">
+          <label for="editImage" class="form-label">Slika (Zamena/opciono)</label>
+          <input type="file" (change)="onFileSelected($event)" class="form-control" accept="image/*">
+          <small *ngIf="editingLocation.image && !selectedFile">Trenutna slika je postavljena.</small>
+        </div>
+        <div class="d-flex justify-content-end gap-2 mt-3">
+          <button type="button" class="btn btn-secondary" (click)="showEditForm = false; editingLocation = null">Otkaži</button>
+          <button type="submit" class="btn btn-success">Sačuvaj izmene</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showDeleteConfirmModal">
+    <div class="modal-content card p-3">
+      <h4 class="mb-3 text-danger">Potvrdi brisanje</h4>
+      <p>Da li ste sigurni da želite da obrišete ovu lokaciju? Ova akcija se ne može poništiti.</p>
+
+      <div class="d-flex justify-content-end gap-2 mt-3">
+        <button type="button" class="btn btn-secondary" (click)="cancelDelete()">Otkaži</button>
+        <button type="button" class="btn btn-danger" (click)="deleteLocation()">Obriši</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showManagerModal && managingLocationId">
+    <div class="modal-content card p-3">
+      <h4 class="mb-3">Upravljanje menadžerima za lokaciju #{{ managingLocationId }}</h4>
+
+      <div class="mb-4 p-3 border rounded border-secondary">
+        <h6>Aktivni menadžeri:</h6>
+        <div *ngIf="!activeManagers.length">
+          <p class="text-warning small mb-0">Nema aktivnih menadžera za ovu lokaciju.</p>
+        </div>
+
+        <ul class="list-group mt-2" *ngIf="activeManagers.length">
+          <li *ngFor="let manager of activeManagers" class="list-group-item d-flex justify-content-between align-items-center mb-1 bg-dark text-white p-2 border-secondary rounded">
+          <span>
+            **{{ manager.email }}** <small>(ID: {{ manager.userId }})</small>
+            <br>
+            <small>Od: {{ manager.startDate }} | Do: {{ manager.endDate || 'Neograničeno' }}</small>
+          </span>
+            <button class="btn btn-sm btn-danger" (click)="unassignManager(manager.userId)">
+              Ukloni
+            </button>
+          </li>
+        </ul>
+      </div>
+
+      <form>
+        <h6>Dodeli novog menadžera:</h6>
+
+        <div class="mb-3">
+          <label class="form-label">Korisnik za dodelu:</label>
+          <select [(ngModel)]="managerAssignment.userId" name="managerUserId" required class="form-control" [disabled]="availableUsers.length === 0">
+            <option [ngValue]="null" disabled>-- Izaberite korisnika --</option>
+            <option *ngIf="availableUsers.length === 0" [ngValue]="null" disabled>Nema dostupnih korisnika (Proverite backend)</option>
+            <option *ngFor="let user of availableUsers" [ngValue]="user.id">
+              {{ user.email }}
+            </option>
+          </select>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Datum početka:</label>
+          <input type="date" [(ngModel)]="managerAssignment.startDate" name="startDate" required class="form-control">
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">Datum završetka (opciono):</label>
+          <input type="date" [(ngModel)]="managerAssignment.endDate" name="endDate" class="form-control">
+        </div>
+
+        <div class="d-flex justify-content-end gap-2 mt-4">
+          <button type="button" class="btn btn-secondary" (click)="closeManagerModal()">Zatvori</button>
+          <button type="button" class="btn btn-success" (click)="assignManager()" [disabled]="!managerAssignment.userId || !managerAssignment.startDate">Dodeli Menadžera</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-md-12" *ngFor="let loc of filteredLocations">
+      <div class="location-card card shadow-sm">
+
+        <div class="location-events-action">
+          <button class="btn btn-warning btn-lg" (click)="viewEvents(loc.id)">
+            Pogledaj Događaje
+          </button>
+        </div>
+        <div class="location-actions">
+
+          <button class="btn btn-icon btn-edit"
+                  title="Izmeni lokaciju"
+                  (click)="openEditModal(loc)"
+                  *ngIf="currentUser?.role === 'ADMIN' || isManagerOfLocation(loc.id)">
+            <i class="fas fa-edit"></i>
+          </button>
+
+          <button *ngIf="currentUser?.role === 'ADMIN'"
+                  class="btn btn-icon btn-manager"
+                  title="Dodeli menadžera"
+                  (click)="openManagerModal(loc.id)">
+            <i class="fas fa-user-plus"></i>
+          </button>
+
+          <button *ngIf="currentUser?.role === 'ADMIN'"
+                  class="btn btn-icon btn-delete"
+                  title="Obriši lokaciju"
+                  (click)="confirmDelete(loc.id)">
+            <i class="fas fa-trash-alt"></i>
+          </button>
+        </div>
+
+        <div class="card-body p-0 d-flex">
+          <div class="details-text p-4 flex-grow-1">
+            <h5>{{ loc.name }}</h5>
+            <p><strong>Adresa:</strong> {{ loc.address }}</p>
+            <p><strong>Tip:</strong> {{ loc.type }}</p>
+
+            <button class="btn btn-link p-0 mt-2" (click)="loc.showDetails = !loc.showDetails">
+              <span [ngClass]="{'rotate': loc.showDetails}">&#9660;</span>
+            </button>
+
+            <div class="details" *ngIf="loc.showDetails">
+              <p class="mt-2"><strong>Opis:</strong> {{ loc.description }}</p>
+              <p><strong>Ukupna ocena:</strong> {{ loc.totalRating }}</p>
+
+              <hr class="mt-3 mb-3 border-secondary">
+
+              <div class="reviews-actions">
+
+                <app-location-review
+                  [locationId]="loc.id" #reviewComp
+                  (reviewSubmitted)="loadLocations()"
+                >
+                </app-location-review>
+
+                <button
+                  *ngIf="currentUser"
+                  class="btn btn-link w-100 mt-0 pt-0 pb-0 text-info small"
+                  (click)="reviewComp.showReviewForm = !reviewComp.showReviewForm">
+                  <i class="fas fa-edit me-2"></i> {{ reviewComp.showReviewForm ? 'Sakrij formu' : 'Ostavi svoj utisak' }}
+                </button>
+
+                <button class="btn btn-link w-100 mt-0 pt-0 pb-0 text-info small" (click)="openReviewsModal(loc.id)">
+                  <i class="fas fa-comment-dots me-2"></i> Pogledaj sve recenzije ({{ loc.reviewCount || 0 }})
+                </button>
+
+              </div>
+            </div>
+          </div>
+
+          <div class="location-image-wrapper">
+            <img
+              [src]="getLocationImage(loc)"
+              (error)="onImageError($event)"
+              alt="{{ loc.name }}"
+              class="img-fluid location-image-cover"
+            >
+          </div>
+
+
+        </div>
+      </div>
+    </div>
+    <div class="col-md-12" *ngIf="(searchName || searchAddress || searchType) && filteredLocations.length === 0">
+      <p class="text-center text-muted">Nema rezultata za pretragu.</p>
+    </div>
+    <div class="col-md-12" *ngIf="!loading && !searchName && !searchAddress && !searchType && locations.length === 0">
+      <p class="text-center text-muted">Trenutno nema unetih lokacija.</p>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="showAllReviewsModal && reviewsLocationId">
+  <app-all-reviews-modal
+    [locationId]="reviewsLocationId!"
+    [locationName]="reviewsLocationName"
+    [isManagedByCurrentUser]="isReviewsLocationManaged"
+    (closeModal)="closeReviewsModal()"
+    (reviewChanged)="handleReviewChange()"
+  >
+  </app-all-reviews-modal>
+</div>

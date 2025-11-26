@@ -1,0 +1,33 @@
+<div class="pending-container">
+  <h2>Status vašeg zahteva</h2>
+
+  <p
+    [ngClass]="{
+      'status-pending': status === 'PENDING',
+      'status-accepted': status === 'ACCEPTED',
+      'status-rejected': status === 'REJECTED'
+    }">
+    {{ message }}
+  </p>
+
+
+  <div *ngIf="status === 'REJECTED' && rejectionReason" class="rejection-box">
+    <strong class="text-dark">Razlog odbijanja:</strong>
+    <p>{{ rejectionReason }}</p>
+  </div>
+
+
+  <div class="actions">
+    <button *ngIf="status === 'REJECTED'" (click)="retryRegistration()" class="btn btn-error">
+      Pošalji ponovo registraciju
+    </button>
+
+    <button *ngIf="status === 'PENDING'" (click)="checkStatus()" class="btn btn-warning">
+      Proveri status ponovo
+    </button>
+
+    <button *ngIf="status === 'ACCEPTED'" (click)="login()" class="btn btn-success">
+      Uloguj se
+    </button>
+  </div>
+</div>

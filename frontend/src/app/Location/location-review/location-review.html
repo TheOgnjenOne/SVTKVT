@@ -1,0 +1,94 @@
+<div class="review-form-container ">
+  <div *ngIf="showReviewForm">
+
+    <div *ngIf="!isAuthenticated" class="alert alert-info text-center small mb-3">
+      Morate biti prijavljeni da biste ostavili utisak ili recenziju.
+    </div>
+
+    <div *ngIf="isAuthenticated">
+
+      <div *ngIf="reviewSent" class=" text-warning text-center">
+        Hvala! Vaš utisak je uspešno poslat.
+      </div>
+
+      <div *ngIf="submitError" class="alert alert-danger">
+        {{ submitError }}
+      </div>
+
+      <form (ngSubmit)="submitReview()" *ngIf="!reviewSent">
+
+        <div class="mb-3">
+          <label for="eventSelect" class="form-label small ">Izaberite događaj na kojem ste bili:</label>
+          <select
+            id="eventSelect"
+            class="form-select form-select-sm"
+            [(ngModel)]="newReview.eventId"
+            name="eventId"
+            (ngModelChange)="updateRecurrencyCount($event)"
+            required
+            [disabled]="loadingEvents"
+          >
+            <option [ngValue]="null" disabled>-- Izaberite događaj --</option>
+            <option *ngIf="loadingEvents" [ngValue]="null" disabled>Učitavanje događaja...</option>
+            <option *ngIf="!loadingEvents && eligibleEvents.length === 0" [ngValue]="null" disabled>Nema događaja za recenziju.</option>
+            <option *ngFor="let event of eligibleEvents" [ngValue]="event.id">
+              {{ event.name }} ({{ event.date | date: 'dd.MM.yyyy' }})
+            </option>
+          </select>
+          <small class="text-warning" *ngIf="currentEventRecurrency > 1">
+            Ovo je rekurentan događaj (održan {{ currentEventRecurrency }} puta).
+          </small>
+        </div>
+
+        <div class="row g-2 mb-3">
+          <div class="col-md-6">
+            <label class="form-label small">Nastup/Program (1-10):</label>
+            <select [(ngModel)]="newReview.performanceRating" name="performanceRating" class="form-select form-select-sm">
+              <option [ngValue]="null">Bez ocene</option>
+              <option *ngFor="let rating of ratingOptions" [ngValue]="rating">{{ rating }}</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small">Zvuk/Svetlo (1-10):</label>
+            <select [(ngModel)]="newReview.soundLightingRating" name="soundLightingRating" class="form-select form-select-sm">
+              <option [ngValue]="null">Bez ocene</option>
+              <option *ngFor="let rating of ratingOptions" [ngValue]="rating">{{ rating }}</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small">Prostor/Lokacija (1-10):</label>
+            <select [(ngModel)]="newReview.venueRating" name="venueRating" class="form-select form-select-sm">
+              <option [ngValue]="null">Bez ocene</option>
+              <option *ngFor="let rating of ratingOptions" [ngValue]="rating">{{ rating }}</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label small">Ukupan utisak (1-10):</label>
+            <select [(ngModel)]="newReview.overallRating" name="overallRating" class="form-select form-select-sm">
+              <option [ngValue]="null">Bez ocene</option>
+              <option *ngFor="let rating of ratingOptions" [ngValue]="rating">{{ rating }}</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <label for="commentText" class="form-label small">Komentar (opciono):</label>
+          <textarea
+            id="commentText"
+            [(ngModel)]="newReview.commentText"
+            name="commentText"
+            class="form-control form-control-sm"
+            rows="2"
+            placeholder="Ostavite detaljniji utisak..."
+          ></textarea>
+        </div>
+
+        <div class="d-grid">
+          <button type="submit" class="btn btn-primary btn-sm" [disabled]="!newReview.eventId">
+            Pošalji utisak
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,34 @@
+<div class="requests-container">
+  <h2 class="page-title">Zahtevi za registraciju</h2>
+
+  <div *ngIf="isLoading" class="loader-container">
+    <div class="loader"></div>
+    <p>Učitavanje zahteva...</p>
+  </div>
+
+  <div class="requests-list" *ngIf="!isLoading && requests.length > 0; else noRequests">
+    <div class="request-card" *ngFor="let req of requests">
+      <div class="request-info">
+        <span class="email">{{ req.email }}</span>
+      </div>
+      <div class="actions">
+        <button class="btn accept" (click)="approve(req)">Prihvati</button>
+        <button *ngIf="!req.showRejectInput" class="btn reject" (click)="req.showRejectInput = true">Odbij</button>
+        <div *ngIf="req.showRejectInput" class="reject-form">
+          <input type="text" placeholder="Unesite razlog odbijanja..." [(ngModel)]="req.reason" class="reject-input" />
+          <button class="btn confirm-reject" (click)="confirmReject(req)">Potvrdi</button>
+          <button class="btn cancel" (click)="req.showRejectInput = false">Otkaži</button>
+
+        </div>
+        <div *ngIf="req.errorMessage" class="error-message">
+          {{ req.errorMessage }}
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <ng-template #noRequests>
+    <p class="no-data" *ngIf="!isLoading">Trenutno nema zahteva za registraciju.</p>
+  </ng-template>
+</div>

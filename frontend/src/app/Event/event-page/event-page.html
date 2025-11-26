@@ -1,0 +1,233 @@
+<div class="container mt-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3>Lista Događaja</h3>
+
+    <div *ngIf="currentUser?.role === 'ADMIN' || currentUser?.role === 'MANAGER'">
+      <button class="btn btn-dark"
+              (click)="showAddForm = true; addError = ''">
+        Dodaj događaj
+      </button>
+    </div>
+  </div>
+
+  <div class="row mb-4 g-2">
+    <div class="col-md-3">
+      <input type="text" [(ngModel)]="searchType" placeholder="Tip (npr. Koncert)" class="form-control">
+    </div>
+
+    <div class="col-md-3">
+      <select [(ngModel)]="searchLocationId" class="form-control">
+        <option [ngValue]="null">-- Sva mesta --</option>
+        <option *ngFor="let loc of locations" [ngValue]="loc.id">
+          {{ loc.name }}
+        </option>
+      </select>
+    </div>
+
+    <div class="col-md-3">
+      <input type="text" [(ngModel)]="searchAddress" placeholder="Adresa" class="form-control">
+    </div>
+
+    <div class="col-md-3">
+      <input type="number" [(ngModel)]="searchMaxPrice" placeholder="Max. Cena" class="form-control" min="0" [disabled]="filterFreeEvents">
+      <div class="form-check mt-1">
+        <input type="checkbox" class="form-check-input" id="filterFree" [(ngModel)]="filterFreeEvents">
+        <label class="form-check-label small" for="filterFree">Samo Besplatni</label>
+      </div>
+    </div>
+
+    <div class="col-md-3 mt-3">
+      <label for="searchDate" class="form-label mb-0 small">Filter po datumu:</label>
+      <input type="date" [(ngModel)]="searchDate" id="searchDate" class="form-control">
+    </div>
+
+    <div class="col-md-3 mt-3" *ngIf="!searchDate">
+      <label for="dateFilter" class="form-label mb-0 small">Filter Prošli/Budući/Današnji:</label>
+      <select [(ngModel)]="dateFilterMode" class="form-control" id="dateFilter">
+        <option value="today">Današnji događaji</option>
+        <option value="all">Svi događaji</option>
+        <option value="future">Budući događaji (Od sutra)</option>
+        <option value="past">Prošli događaji (Do juče)</option>
+      </select>
+    </div>
+
+    <div class="col-md-3 mt-4 d-flex align-items-center">
+      <button class="btn btn-outline-secondary w-100 mt-2" (click)="resetFilters()">
+        <i class="fas fa-undo me-2"></i> Resetuj filtere
+      </button>
+    </div>
+  </div>
+
+  <p *ngIf="loading">Učitavanje događaja...</p>
+  <p *ngIf="errorMessage && !loading" class="text-danger">{{ errorMessage }}</p>
+  <div *ngIf="!loading && filteredEvents.length === 0 && !errorMessage" class="alert alert-info">
+    Nema događaja koji odgovaraju kriterijumima pretrage.
+  </div>
+
+  <div class="row g-3">
+    <div class="col-md-12" *ngFor="let event of filteredEvents">
+      <div class="location-card card shadow-sm">
+
+        <div class="location-actions">
+          <button class="btn btn-icon btn-edit"
+                  title="Izmeni događaj"
+                  (click)="openEditModal(event)"
+                  *ngIf="canEditDelete(event)">
+            <i class="fas fa-edit"></i>
+          </button>
+          <button class="btn btn-icon btn-delete"
+                  title="Obriši događaj"
+                  (click)="confirmDelete(event.id)"
+                  *ngIf="canEditDelete(event)">
+            <i class="fas fa-trash-alt"></i>
+          </button>
+        </div>
+
+        <div class=" cssard p-0 d-flex">
+          <div class=" p-4 flex-grow-1">
+            <h5>{{ event.name }}</h5>
+
+            <p class="mb-1"><strong>Lokacija:</strong> {{ event.locationName }} </p>
+
+            <p class="mb-1"><strong>Tip:</strong> {{ event.type }}</p>
+
+            <p class="mb-1">
+              <i class="fas fa-calendar-alt me-2"></i>
+              {{ event.date | date: 'dd.MM.yyyy HH:mm' }}
+            </p>
+
+            <button class="btn btn-link p-0 mt-2" (click)="event.showDetails = !event.showDetails">
+              <span [ngClass]="{'rotate': event.showDetails}">&#9660;</span>
+            </button>
+
+            <div class="details" *ngIf="event.showDetails">
+              <p class="mb-1"><strong>Adresa:</strong> {{ event.address }}</p>
+              <p class="mb-1"><strong>Cena:</strong> {{ event.price === 0 || event.price === null ? 'Besplatno' : (event.price | currency: 'RSD':'symbol') }}</p>
+              <p class="mb-0"><strong>Redovan:</strong> {{ event.recurrent ? 'Da' : 'Ne' }}</p>
+            </div>
+          </div>
+
+          <div class="location-image-wrapper">
+            <img
+              [src]="event.image ? 'http://localhost:8080/uploads/' + event.image.path : 'assets/defaultEvent.png'"
+              alt="{{ event.name }}"
+              class="img-fluid location-image-cover"
+            >
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" *ngIf="showAddForm || showEditForm || showDeleteConfirmModal">
+
+  <div class="modal-content card p-3" *ngIf="showAddForm">
+    <h4 class="mb-3">Novi događaj</h4>
+
+    <p *ngIf="addError" class="text-danger">{{ addError }}</p>
+    <form (ngSubmit)="addEvent()">
+
+      <div class="mb-2">
+        <input type="text" [(ngModel)]="newEvent.name" name="name" placeholder="Naziv događaja" required class="form-control">
+      </div>
+      <div class="mb-2">
+        <select [(ngModel)]="newEvent.locationId" name="locationId" required class="form-control">
+          <option value="" disabled>-- Izaberite lokaciju (obavezno) --</option>
+          <option *ngFor="let loc of locations" [ngValue]="loc.id">
+            {{ loc.name }} ({{ loc.address }})
+          </option>
+        </select>
+        <small class="text-warning" *ngIf="currentUser?.role === 'MANAGER'">Možete kreirati događaj samo za lokacije kojima upravljate.</small>
+      </div>
+
+      <div class="mb-2">
+        <input type="text" [(ngModel)]="newEvent.address" name="address" placeholder="Adresa" required class="form-control">
+      </div>
+      <div class="mb-2">
+        <input type="text" [(ngModel)]="newEvent.type" name="type" placeholder="Tip događaja" required class="form-control">
+      </div>
+      <div class="mb-2">
+        <label class="form-label small">Datum i vreme:</label>
+        <input type="datetime-local" [(ngModel)]="newEvent.date" name="date" required class="form-control">
+      </div>
+      <div class="mb-2">
+        <input type="number" [(ngModel)]="newEvent.price" name="price" placeholder="Cena ulaska (0 ili prazno za besplatno)" class="form-control" min="0">
+      </div>
+      <div class="mb-2 form-check">
+        <input type="checkbox" [checked]="newEvent.recurrent" (change)="handleRecurrentChange($event, 'new')" name="isRecurrent" class="form-check-input" id="isRecurrentAdd">
+        <label class="form-check-label small" for="isRecurrentAdd">Redovan događaj</label>
+      </div>
+      <div class="mb-2">
+        <label for="imageAdd" class="form-label small">Slika (obavezno)</label>
+        <input type="file" (change)="onFileSelected($event)" class="form-control" accept="image/*" required>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2 mt-3">
+        <button type="button" class="btn btn-secondary" (click)="showAddForm = false">Otkaži</button>
+        <button type="submit" class="btn btn-success">Sačuvaj događaj</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="modal-content card p-3" *ngIf="showEditForm && editingEvent">
+    <h4 class="mb-3">Izmeni događaj: {{ editingEvent.name }}</h4>
+
+    <p *ngIf="editError" class="text-danger">{{ editError }}</p>
+    <form (ngSubmit)="saveEventEdit()">
+
+      <div class="mb-2">
+        <input type="text" [(ngModel)]="editingEvent.name" name="editName" placeholder="Naziv događaja" required class="form-control">
+      </div>
+      <div class="mb-2">
+        <select [(ngModel)]="editingEvent.locationId" name="editLocationId" required class="form-control" disabled>
+          <option *ngFor="let loc of locations" [ngValue]="loc.id">
+            {{ loc.name }} (Trenutno: {{ editingEvent.locationName }})
+          </option>
+        </select>
+        <small class="text-warning">Lokacija se ne može menjati nakon kreiranja.</small>
+      </div>
+
+      <div class="mb-2">
+        <input type="text" [(ngModel)]="editingEvent.address" name="editAddress" placeholder="Adresa" required class="form-control">
+      </div>
+      <div class="mb-2">
+        <input type="text" [(ngModel)]="editingEvent.type" name="editType" placeholder="Tip događaja" required class="form-control">
+      </div>
+      <div class="mb-2">
+        <label class="form-label small">Datum i vreme:</label>
+        <input type="datetime-local" [(ngModel)]="editingEvent.date" name="editDate" required class="form-control">
+      </div>
+      <div class="mb-2">
+        <input type="number" [(ngModel)]="editingEvent.price" name="editPrice" placeholder="Cena ulaska (0 ili prazno za besplatno)" class="form-control" min="0">
+      </div>
+      <div class="mb-2 form-check">
+        <input type="checkbox" [checked]="editingEvent.recurrent" (change)="handleRecurrentChange($event, 'edit')" name="editIsRecurrent" class="form-check-input" id="isRecurrentEdit">
+        <label class="form-check-label small" for="isRecurrentEdit">Redovan događaj</label>
+      </div>
+      <div class="mb-2">
+        <label for="editImage" class="form-label small">Slika (Zamena/opciono)</label>
+        <input type="file" (change)="onFileSelected($event)" class="form-control" accept="image/*">
+        <small *ngIf="editingEvent.image && !selectedFile" class="text-muted">Trenutna slika je postavljena. Nova će je zameniti.</small>
+      </div>
+
+      <div class="d-flex justify-content-end gap-2 mt-3">
+        <button type="button" class="btn btn-secondary" (click)="showEditForm = false; editingEvent = null">Otkaži</button>
+        <button type="submit" class="btn btn-success">Sačuvaj izmene</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="modal-content card p-3" *ngIf="showDeleteConfirmModal">
+    <h4 class="mb-3 text-danger">Potvrdi brisanje događaja</h4>
+    <p>Da li ste sigurni da želite da obrišete ovaj događaj? Ova akcija se ne može poništiti.</p>
+
+    <div class="d-flex justify-content-end gap-2 mt-3">
+      <button type="button" class="btn btn-secondary" (click)="cancelDelete()">Otkaži</button>
+      <button type="button" class="btn btn-danger" (click)="deleteEvent()">Obriši</button>
+    </div>
+  </div>
+
+</div>

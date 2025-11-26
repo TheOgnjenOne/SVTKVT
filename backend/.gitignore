@@ -1,0 +1,56 @@
+# --- Maven / Build Artefakti ---
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+/bin/
+
+# --- IDE Postavke ---
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### VS Code ###
+.vscode/
+
+# --- Osetljiva konfiguracija ---
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+application-local.properties
+application-dev.properties
+
+# --- Java / JVM ---
+hs_err_pid*
+*.class
+
+# --- Sistemski / OS Fajlovi ---
+.DS_Store
+Thumbs.db
+
+# --- NodeJS Zavisnosti (ako postoji frontend) ---
+/node_modules

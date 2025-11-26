@@ -1,0 +1,22 @@
+<div class="settings-tab-wrapper">
+
+  <div class="settings-container">
+    <div class="settings-title">Promena lozinke</div>
+
+    <div class="settings-form">
+      <input type="password" placeholder="Trenutna lozinka" [(ngModel)]="currentPassword" [disabled]="isProcessing"/>
+      <input type="password" placeholder="Nova lozinka" [(ngModel)]="newPassword" [disabled]="isProcessing"/>
+      <input type="password" placeholder="Potvrdi novu lozinku" [(ngModel)]="confirmPassword" [disabled]="isProcessing"/>
+
+      <button class="btn-change" (click)="changePassword()" [disabled]="isProcessing">Promeni</button>
+    </div>
+
+    <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
+    <div *ngIf="successMessage" class="success-message">{{ successMessage }}</div>
+
+    <div *ngIf="isProcessing" class="loader-overlay">
+      <div class="loader"></div>
+    </div>
+  </div>
+
+</div>

@@ -1,0 +1,153 @@
+<div class="profile">
+  <div class="header">
+    <div class="header-content">
+      <h1>Profil Korisnika</h1>
+      <div class="role" [class]="userData.role.toLowerCase()">
+        <i class="fas" [class]="userData.role === 'ADMIN' ? 'fa-crown' : userData.role === 'MANAGER' ? 'fa-user-tie' : 'fa-user'"></i>
+        {{ userData.role === 'ADMIN' ? 'Administrator' : userData.role === 'MANAGER' ? 'Menadžer' : 'Korisnik' }}
+      </div>
+    </div>
+  </div>
+
+  <div class="content">
+    <div class="left">
+
+      <div class="card image-card">
+        <h2><i class="fas fa-camera"></i> Profilna Slika</h2>
+        <div class="image-box">
+          <img [src]="currentProfileImageUrl" alt="Profilna">
+        </div>
+
+        <div class="file-upload">
+          <input type="file" (change)="handleImageSelect($event)" id="fileInput" class="file-input">
+          <label for="fileInput" class="custom-file-upload">
+            <i class="fas fa-cloud-upload-alt"></i> {{ selectedImage ? selectedImage!.name : 'Izaberi sliku' }}
+          </label>
+          <button class="btn primary upload-btn" (click)="uploadImage()" [disabled]="!selectedImage || isUploading">
+            <span *ngIf="isUploading" class="spinner"></span>
+            <i class="fas" [class]="isUploading ? 'fa-spinner fa-spin' : 'fa-upload'"></i>
+            {{ isUploading ? 'Učitavanje...' : 'Sačuvaj Sliku' }}
+          </button>
+        </div>
+
+      </div>
+
+      <div class="card">
+        <h2><i class="fas fa-user-edit"></i> Lični Podaci</h2>
+
+        <div class="saving-overlay" *ngIf="isSaving">
+          <div class="spinner"></div>
+          <p>Čuvanje...</p>
+        </div>
+
+        <div class="form">
+          <div class="field">
+            <label>E-mail</label>
+            <input type="text" [value]="userData.email" disabled>
+            <small>Ne može se menjati</small>
+          </div>
+
+          <div class="field">
+            <label>Puno Ime</label>
+            <input type="text" [(ngModel)]="userData.name" [disabled]="!isEditing">
+          </div>
+
+          <div class="field">
+            <label>Broj Telefona</label>
+            <input type="tel" [(ngModel)]="userData.phoneNumber" [disabled]="!isEditing">
+          </div>
+
+          <div class="field">
+            <label>Datum Rođenja</label>
+            <input type="date" [(ngModel)]="userData.birthday" [disabled]="!isEditing">
+          </div>
+
+          <div class="field">
+            <label>Adresa</label>
+            <input type="text" [(ngModel)]="userData.address" [disabled]="!isEditing">
+          </div>
+
+          <div class="field">
+            <label>Grad</label>
+            <input type="text" [(ngModel)]="userData.city" [disabled]="!isEditing">
+          </div>
+        </div>
+
+        <div class="actions">
+          <button class="btn secondary" (click)="changePassword()">
+            <i class="fas fa-key"></i> Promena šifre
+          </button>
+
+          <div class="edit-btns" *ngIf="!isEditing; else editBtns">
+            <button class="btn primary" (click)="startEditing()">
+              <i class="fas fa-edit"></i> Uredi
+            </button>
+          </div>
+
+          <ng-template #editBtns>
+            <div class="edit-btns">
+              <button class="btn cancel" (click)="cancelEditing()">
+                <i class="fas fa-times"></i> Poništi
+              </button>
+              <button class="btn save" (click)="saveDetails()" [disabled]="isSaving">
+                <i class="fas" [class]="isSaving ? 'fa-spinner fa-spin' : 'fa-check'"></i>
+                {{ isSaving ? 'Čuvanje...' : 'Sačuvaj' }}
+              </button>
+            </div>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+
+    <div class="right">
+
+      <div *ngIf="userData.role === 'ADMIN' || userData.role === 'MANAGER'" class="card">
+        <h3>
+          <i class="fas" [class]="userData.role === 'ADMIN' ? 'fa-shield-alt' : 'fa-tasks'"></i>
+          {{ userData.role === 'ADMIN' ? 'Admin Panel' : 'Moje Lokacije' }}
+        </h3>
+
+        <div *ngIf="userData.role === 'MANAGER'" class="locations">
+          <div *ngIf="managedLocations.length === 0" class="location location-info-only">
+            <i class="fas fa-info-circle"></i>
+            <span>Trenutno ne upravljate nijednom lokacijom.</span>
+          </div>
+
+          <div *ngFor="let loc of managedLocations.slice(0, 3)" class="location hover-effect">
+            <i class="fas fa-building"></i>
+            <span>{{ loc.name }}</span>
+          </div>
+        </div>
+
+        <div *ngIf="userData.role === 'ADMIN'" class="admin-features">
+          <div class="feature" [routerLink]="['/admin/registration-requests']" style="cursor: pointer;">
+            <i class="fas fa-users-cog"></i>
+            <span>Upravljanje Korisnicima</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3><i class="fas fa-star"></i> Moji Utisci</h3>
+
+        <div class="reviews">
+          <div *ngIf="userReviews.length === 0" class="no-reviews">
+            <i class="fas fa-comment-slash"></i>
+            <p>Nema utisaka</p>
+          </div>
+
+          <div *ngFor="let review of userReviews.slice(0, 2)" class="review">
+            <div class="review-top">
+              <strong>{{ review.locationName }}</strong>
+              <div class="rating-display">
+                <span class="rating-value">{{ review.rating }}/10</span>
+              </div>
+            </div>
+            <p class="comment-text">{{ review.text }}</p>
+            <small class="review-date">{{ review.reviewDate }}</small>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

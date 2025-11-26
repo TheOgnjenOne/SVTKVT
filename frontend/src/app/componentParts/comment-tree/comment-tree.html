@@ -1,0 +1,52 @@
+<div *ngFor="let comment of comments" class="mt-2" [ngClass]="{'border-start border-1 ps-2': true}">
+
+  <div class="comment-item p-2 rounded fade-in" [ngClass]="{'bg-warning-subtle': comment.isManagerReply}">
+
+    <div class="comment-header d-flex justify-content-between align-items-center">
+      <span class="small">
+        <strong>{{ comment.userEmail }}</strong>
+
+       <span *ngIf="isAdminComment(comment)" class="badge bg-primary ms-1">ADMIN</span>
+        <span *ngIf="!isAdminComment(comment) && comment.isManagerReply" class="badge bg-danger ms-1">MENADŽER</span>
+
+        <span class="text-muted ms-2">{{ comment.createdAt | date:'dd.MM.yyyy HH:mm' }}</span>
+      </span>
+    </div>
+
+    <p class="mb-1 mt-1 small">{{ comment.text }}</p>
+
+    <div *ngIf="currentUser" class="d-flex justify-content-end">
+      <button *ngIf="isManagerOrAdmin || comment.isManagerReply"
+              class="btn btn-sm btn-link text-info p-0"
+              (click)="toggleReplyEvent.emit({reviewId: reviewId, commentId: comment.id})">
+        <i class="fas fa-reply me-1"></i> Odgovori
+      </button>
+    </div>
+
+  </div>
+
+  <div *ngIf="replyingToReviewId === reviewId && replyingToCommentId === comment.id"
+       class="mt-2 p-2 border rounded bg-white fade-in">
+      <textarea [ngModel]="newCommentText"
+                (ngModelChange)="onNewCommentTextChange($event)"
+                rows="2"
+                class="form-control mb-2"
+                placeholder="Odgovor na {{ comment.userEmail }}..."></textarea>
+    <div class="d-flex justify-content-end">
+      <button class="btn btn-sm btn-success" [disabled]="!newCommentText" (click)="submitCommentEvent.emit()">Pošalji</button>
+    </div>
+  </div>
+
+  <app-comment-tree *ngIf="comment.replies?.length"
+                    [comments]="comment.replies"
+                    [currentUser]="currentUser"
+                    [isManagerOrAdmin]="isManagerOrAdmin"
+                    [reviewId]="reviewId"
+                    [replyingToReviewId]="replyingToReviewId"
+                    [replyingToCommentId]="replyingToCommentId"
+                    [newCommentText]="newCommentText"
+                    (newCommentTextChange)="onNewCommentTextChange($event)"
+                    (toggleReplyEvent)="toggleReplyEvent.emit($event)"
+                    (submitCommentEvent)="submitCommentEvent.emit()">
+  </app-comment-tree>
+</div>

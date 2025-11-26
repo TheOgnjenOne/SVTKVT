@@ -1,0 +1,181 @@
+<div class="container mt-5" *ngIf="analyticsData$ | async as data">
+  <h1 class="mb-4">📊 Analitika Mesta</h1>
+
+  <div class="card p-4 mb-5 shadow-sm">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-3">
+        <label for="startDate" class="form-label text-muted">Početni Datum/Vreme</label>
+        <input type="datetime-local" class="form-control" id="startDate" [(ngModel)]="startDate" name="startDate" (ngModelChange)="handlePeriodChange()" required>
+      </div>
+      <div class="col-md-3">
+        <label for="endDate" class="form-label text-muted">Krajnji Datum/Vreme</label>
+        <input type="datetime-local" class="form-control" id="endDate" [(ngModel)]="endDate" name="endDate" (ngModelChange)="handlePeriodChange()" required>
+      </div>
+      <div class="col-md-6 d-flex justify-content-end">
+        <div class="btn-group">
+          <button type="button" class="btn btn-outline-primary" (click)="handlePeriodChange('week')">Poslednja Nedelja</button>
+          <button type="button" class="btn btn-outline-primary" (click)="handlePeriodChange('month')">Poslednji Mesec</button>
+          <button type="button" class="btn btn-outline-primary" (click)="handlePeriodChange('year')">Poslednja Godina</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="loadingFull" class="alert alert-info text-center py-4">
+    <div class="spinner-border text-info me-2" role="status"></div> Učitavanje analitičkih podataka...
+  </div>
+  <div *ngIf="error" class="alert alert-danger">❌ {{ error }}</div>
+
+  <div *ngIf="!loadingFull && !error && data.eventStatistics.length === 0" class="alert alert-warning">
+    ⚠️ Nema podataka o događajima za izabrani period ili niste menadžer nijednog mesta.
+  </div>
+
+  <div *ngIf="!loadingFull && data.eventStatistics.length > 0">
+    <div class="mb-5">
+      <label for="locationSelect" class="form-form-label fw-bold">Izaberite Lokaciju za Analizu:</label>
+      <select id="locationSelect" class="form-select form-select-lg"
+              [ngModel]="selectedLocationId"
+              (ngModelChange)="onLocationSelectChange($event, data)">
+
+        <option *ngFor="let stats of data.eventStatistics" [ngValue]="stats.locationId">
+          {{ stats.locationName }} ({{ stats.totalEvents }} događaja)
+        </option>
+      </select>
+    </div>
+
+    <section class="mb-5 position-relative">
+      <h2 class="border-bottom pb-2 mb-4">Statistika Događaja</h2>
+
+      <div [class.opacity-50]="loadingCharts" [class.pe-none]="loadingCharts">
+        <div class="d-flex align-items-center mb-4" *ngIf="data.eventStatistics.length > 1">
+          <button class="btn btn-dark me-2" (click)="navigateLocation('prev', data)" [disabled]="loadingCharts">
+            ⬅️ Prethodno
+          </button>
+          <h4 class="flex-grow-1 text-center mb-0 text-primary">
+            Prikaz: <strong>{{ getCurrentStats(data)?.locationName || 'Učitavanje...' }}</strong>
+          </h4>
+          <button class="btn btn-dark" (click)="navigateLocation('next', data)" [disabled]="loadingCharts">
+            Sledeće ➡️
+          </button>
+        </div>
+
+        <div class="col-12">
+          <div class="card h-100 shadow-lg border-primary">
+            <div class="card-header bg-primary text-white">
+              <h3 class="card-title mb-0">{{ getCurrentStats(data)?.locationName || 'Učitavanje...' }} - Detaljna Analiza</h3>
+            </div>
+            <div class="card-body position-relative">
+              <div [class.opacity-50]="loadingCharts" [class.pe-none]="loadingCharts">
+                <h4 class="text-center mb-4">UKUPNO DOGAĐAJA U PERIODU:
+                  <strong>{{ getCurrentStats(data)?.totalEvents || '...' }}</strong>
+                </h4>
+                <div class="row">
+                  <div class="col-md-6 text-center">
+                    <p class="fw-bold text-success">Podela: Plaćeni vs Besplatni</p>
+                    <div style="height: 350px; margin: 0 auto;">
+                      <canvas baseChart
+                              [data]="getPaidFreeChartData(getCurrentStats(data)!)"
+                              [options]="doughnutChartOptions"
+                              [type]="doughnutChartType"
+                              *ngIf="!loadingCharts && getCurrentStats(data)">
+                      </canvas>
+                      <div *ngIf="loadingCharts" class="d-flex align-items-center justify-content-center h-100">
+                        <div class="spinner-border text-primary" role="status"></div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-md-6 text-center">
+                    <p class="fw-bold text-info">Podela: Redovni vs Neredovni</p>
+                    <div style="height: 350px; margin: 0 auto;">
+                      <canvas baseChart
+                              [data]="getRecurrenceChartData(getCurrentStats(data)!)"
+                              [options]="doughnutChartOptions"
+                              [type]="doughnutChartType"
+                              *ngIf="!loadingCharts && getCurrentStats(data)">
+                      </canvas>
+                      <div *ngIf="loadingCharts" class="d-flex align-items-center justify-content-center h-100">
+                        <div class="spinner-border text-primary" role="status"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div *ngIf="loadingCharts" class="position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center bg-light bg-opacity-75 rounded">
+                <div class="text-center">
+                  <div class="spinner-border text-primary mb-2" style="width: 3rem; height: 3rem;" role="status"></div>
+                  <p class="fw-bold text-dark">Ažuriranje podataka...</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <hr/>
+
+    <section class="mt-5 mb-5">
+      <h2 class="border-bottom pb-2 mb-4">💬 Najskorija 3 Utiska (za Top Ocenjeno Mesto)</h2>
+      <div *ngIf="data.latestReviewsForTopLocation.length > 0; else noReviews">
+        <div class="card shadow-sm border-success">
+          <div class="card-header bg-success text-white fw-bold">
+            Utisci za: {{ data.topRatedLocations[0]?.locationName || 'Nije dostupno' }}
+          </div>
+          <ul class="list-group list-group-flush">
+            <li *ngFor="let review of data.latestReviewsForTopLocation" class="list-group-item">
+              <p class="mb-1 fw-bold">Ocena: <span class="text-warning">★</span> {{ review.overallRating }} / 5</p>
+              <p class="mb-0 fst-italic">"{{ review.commentText.substring(0, 100) }}{{ review.commentText.length > 100 ? '...' : '' }}"</p>
+              <small class="text-muted">Korisnik: {{ review.userName }}</small>
+            </li>
+          </ul>
+        </div>
+      </div>
+      <ng-template #noReviews><p class="alert alert-warning">Nema skorijih utisaka za najbolje ocenjeno mesto.</p></ng-template>
+    </section>
+
+    <hr/>
+
+    <div class="row">
+      <section class="col-md-6 mb-4">
+        <h2 class="border-bottom pb-2 mb-4">⭐ Top-liste Prosečnih Ocena **MESTA**</h2>
+        <div class="card shadow-sm h-100">
+          <div class="card-body">
+            <h5 class="text-success fw-bold">Najbolje Ocenjena Mesta (Top {{ data.topRatedLocations.length }})</h5>
+            <ol class="list-group list-group-flush">
+              <li class="list-group-item d-flex justify-content-between align-items-start" *ngFor="let loc of data.topRatedLocations">
+                {{ loc.locationName }} <span class="badge bg-success">{{ loc.averageRating | number:'1.2-2' }} / 5</span>
+              </li>
+            </ol>
+            <h5 class="mt-4 text-danger fw-bold">Najniže Ocenjena Mesta (Low {{ data.lowestRatedLocations.length }})</h5>
+            <ol class="list-group list-group-flush">
+              <li class="list-group-item d-flex justify-content-between align-items-start" *ngFor="let loc of data.lowestRatedLocations">
+                {{ loc.locationName }} <span class="badge bg-danger">{{ loc.averageRating | number:'1.2-2' }} / 5</span>
+              </li>
+            </ol>
+          </div>
+        </div>
+      </section>
+
+      <section class="col-md-6 mb-4">
+        <h2 class="border-bottom pb-2 mb-4">🎉 Top-liste Prosečnih Ocena **DOGAĐAJA**</h2>
+        <div class="card shadow-sm h-100">
+          <div class="card-body">
+            <h5 class="text-success fw-bold">Najbolje Ocenjeni Događaji (Top {{ topRatedEvents.length }})</h5>
+            <ol class="list-group list-group-flush">
+              <li class="list-group-item d-flex justify-content-between align-items-start" *ngFor="let event of topRatedEvents">
+                {{ event.eventName }} <span class="badge bg-success">{{ event.averageRating | number:'1.2-2' }} / 5</span>
+              </li>
+            </ol>
+            <h5 class="mt-4 text-danger fw-bold">Najniže Ocenjeni Događaji (Low {{ lowestRatedEvents.length }})</h5>
+            <ol class="list-group list-group-flush">
+              <li class="list-group-item d-flex justify-content-between align-items-start" *ngFor="let event of lowestRatedEvents">
+                {{ event.eventName }} <span class="badge bg-danger">{{ event.averageRating | number:'1.2-2' }} / 5</span>
+              </li>
+            </ol>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>

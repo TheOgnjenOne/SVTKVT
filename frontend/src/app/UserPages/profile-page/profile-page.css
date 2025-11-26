@@ -1,0 +1,41 @@
+.user-profile-container {
+  display: flex;
+  gap: 20px;
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #121212;
+}
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 150px;
+}
+
+.sidebar a {
+  padding: 8px 12px;
+  text-decoration: none;
+  color: #ccc;
+  border-radius: 4px;
+  transition: background 0.2s, color 0.2s;
+}
+
+.sidebar a.active {
+  background-color: #1f1f1f;
+  color: #fff;
+}
+
+.sidebar a:hover {
+  background-color: #2a2a2a;
+  color: #fff;
+}
+
+.content {
+  flex: 1;
+  background-color: #1f1f1f;
+  padding: 20px;
+  border-radius: 8px;
+  color: #fff;
+}

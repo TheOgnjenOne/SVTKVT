@@ -1,0 +1,51 @@
+<div class="register-container">
+  <h2>Registracija</h2>
+
+
+  <form (ngSubmit)="onRegisterSubmit()" class="row g-3">
+
+    <!-- Email -->
+    <div class="col-md-12">
+      <label for="email" class="form-label">Email adresa</label>
+      <input type="email" id="email" name="email" class="form-control"
+             placeholder="Unesite email"
+             [(ngModel)]="registerModel.email"
+             #emailCtrl="ngModel">
+      <div *ngIf="emailCtrl.touched && isEmailValid()" class="text-danger small">
+        {{ isEmailValid() }}
+      </div>
+    </div>
+
+    <!-- Lozinka -->
+    <div class="col-md-12">
+      <label for="password" class="form-label">Lozinka</label>
+      <input type="password" id="password" name="password" class="form-control"
+             placeholder="Unesite lozinku"
+             [(ngModel)]="registerModel.password"
+             #passwordCtrl="ngModel">
+      <div *ngIf="passwordCtrl.touched && isPasswordValid()" class="text-danger small">
+        {{ isPasswordValid() }}
+      </div>
+    </div>
+
+    <!-- Adresa -->
+    <div class="col-md-12">
+      <label for="address" class="form-label">Adresa (opciono)</label>
+      <input type="text" id="address" name="address" class="form-control"
+             placeholder="Unesite adresu"
+             [(ngModel)]="registerModel.address">
+    </div>
+
+    <!-- Submit dugme -->
+    <div class="col-12">
+      <button type="submit" class="btn btn-primary w-100">Pošalji zahtev</button>
+    </div>
+
+  </form>
+  <div *ngIf="errorMsg" class="text-danger my-2">
+    {{ errorMsg }}
+  </div>
+  <div *ngIf="successMsg" class="text-success my-2">
+    {{ successMsg }}
+  </div>
+</div>

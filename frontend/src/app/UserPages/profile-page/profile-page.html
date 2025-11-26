@@ -1,0 +1,10 @@
+<div class="user-profile-container">
+  <div class="sidebar">
+    <a routerLink="details" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Profile</a>
+    <a routerLink="settings" routerLinkActive="active">Settings</a>
+  </div>
+
+  <div class="content">
+    <router-outlet></router-outlet>
+  </div>
+</div>
