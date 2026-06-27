@@ -7,6 +7,7 @@ import com.example.demo.Model.Location;
 import com.example.demo.Repository.ILocationManagerRepository;
 import com.example.demo.Repository.ILocationRepository;
 import com.example.demo.Repository.IReviewRepository;
+import com.example.demo.Services.ILocationIndexService;
 import com.example.demo.Services.ILocationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.Authentication;
@@ -22,12 +23,14 @@ public class LocationServiceImpl implements ILocationService {
     private final ILocationRepository locationRepository;
     private final ILocationManagerRepository locationManagerRepository;
     private final IReviewRepository reviewRepository;
+    private final ILocationIndexService locationIndexService;
 
     @Autowired
-    public LocationServiceImpl(ILocationRepository locationRepository, ILocationManagerRepository locationManagerRepository, IReviewRepository reviewRepository) {
+    public LocationServiceImpl(ILocationRepository locationRepository, ILocationManagerRepository locationManagerRepository, IReviewRepository reviewRepository, ILocationIndexService locationIndexService) {
         this.locationRepository = locationRepository;
         this.locationManagerRepository = locationManagerRepository;
         this.reviewRepository = reviewRepository;
+        this.locationIndexService = locationIndexService;
     }
 
     @Override
@@ -66,14 +69,18 @@ public class LocationServiceImpl implements ILocationService {
                             loc.getDescription(),
                             loc.getTotalRating(),
                             imageDto,
-                            reviewCount
+                            reviewCount,
+                            loc.getPdfKey() != null && !loc.getPdfKey().isBlank()
                     );
                 })
                 .collect(Collectors.toList());
     }
     @Override
     public Location save(Location location) {
-        return locationRepository.save(location);
+        Location saved = locationRepository.save(location);
+        // UES: osveži ES dokument pri kreiranju/izmeni mesta
+        locationIndexService.indexLocation(saved);
+        return saved;
     }
 
     @Override
@@ -84,6 +91,8 @@ public class LocationServiceImpl implements ILocationService {
     @Override
     public void delete(Long id){
         locationRepository.deleteById(id);
+        // UES: ukloni mesto iz ES indeksa
+        locationIndexService.deleteFromIndex(id);
     }
 
     @Override
@@ -129,7 +138,8 @@ public class LocationServiceImpl implements ILocationService {
                 loc.getDescription(),
                 loc.getTotalRating(),
                 imageDto,
-                reviewCount
+                reviewCount,
+                loc.getPdfKey() != null && !loc.getPdfKey().isBlank()
         );
 
         return Optional.of(dto);
@@ -176,7 +186,8 @@ public class LocationServiceImpl implements ILocationService {
                             loc.getDescription(),
                             loc.getTotalRating(),
                             imageDto,
-                            reviewCount
+                            reviewCount,
+                            loc.getPdfKey() != null && !loc.getPdfKey().isBlank()
                     );
                 })
                 .collect(Collectors.toList());

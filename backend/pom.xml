@@ -90,6 +90,25 @@
 			<artifactId>spring-boot-starter-mail</artifactId>
 		</dependency>
 
+		<!-- UES: Elasticsearch full-text search (Spring Data ES, ES client 8.x via Boot 3.5.x) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-elasticsearch</artifactId>
+		</dependency>
+
+		<!-- UES: MinIO object storage (slike + PDF dokumenti) -->
+		<dependency>
+			<groupId>io.minio</groupId>
+			<artifactId>minio</artifactId>
+			<version>8.5.12</version>
+		</dependency>
+
+		<!-- UES: PDFBox za parsiranje teksta iz PDF opisa (indeksiranje pdfOpis polja) -->
+		<dependency>
+			<groupId>org.apache.pdfbox</groupId>
+			<artifactId>pdfbox</artifactId>
+			<version>3.0.3</version>
+		</dependency>
 
 	</dependencies>
 

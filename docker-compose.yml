@@ -1,0 +1,117 @@
+# UES 2026 — CELA aplikacija u jednoj komandi:
+#   docker compose up --build
+#
+# Servisi:
+#   Frontend (Angular/nginx): http://localhost:4200
+#   Backend  (Spring Boot):   http://localhost:8080
+#   Elasticsearch:            http://localhost:9200
+#   Kibana (debug):           http://localhost:5601
+#   MinIO konzola:            http://localhost:9001   (minioadmin / minioadmin)
+#   MySQL:                    localhost:3306 (baza svtkvt)
+#
+# Backend čeka (healthcheck) da MySQL/Elasticsearch/MinIO budu spremni pre nego što krene,
+# pa se indeks i bucket-i kreiraju iz prve.
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: svtkvt-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: mysql123
+      MYSQL_DATABASE: svtkvt
+    ports:
+      # Host 3307 -> kontejner 3306 (lokalni MySQL na hostu već drži 3306).
+      # Backend se i dalje povezuje preko docker mreže na mysql:3306, ovo je samo za pristup sa hosta.
+      - "3307:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -uroot -pmysql123 --silent || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  elasticsearch:
+    # Verzija prati ES klijenta iz Spring Boot 3.5.6 (elasticsearch-java 8.18.6).
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.18.6
+    container_name: svtkvt-elasticsearch
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - ES_JAVA_OPTS=-Xms512m -Xmx512m
+    ports:
+      - "9200:9200"
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -f http://localhost:9200/_cluster/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 40s
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.18.6
+    container_name: svtkvt-kibana
+    environment:
+      - ELASTICSEARCH_HOSTS=http://elasticsearch:9200
+    ports:
+      - "5601:5601"
+    depends_on:
+      elasticsearch:
+        condition: service_healthy
+
+  minio:
+    image: minio/minio:latest
+    container_name: svtkvt-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio-data:/data
+    # Bez healthcheck-a: minio image je minimalan i često nema 'curl', pa bi healthcheck
+    # ostao zauvek "unhealthy" i blokirao backend. MinIO je spreman za par sekundi, a backend
+    # ionako čeka MySQL+ES (~30-40s) pa je MinIO sigurno gore pre nego što MinioConfig krene.
+
+  backend:
+    build:
+      context: ./backend
+    container_name: svtkvt-backend
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/svtkvt?allowPublicKeyRetrieval=true&useSSL=false&serverTimezone=UTC"
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: mysql123
+      SPRING_ELASTICSEARCH_URIS: http://elasticsearch:9200
+      MINIO_URL: http://minio:9000
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+      MINIO_BUCKET_IMAGES: images
+      MINIO_BUCKET_PDFS: pdfs
+    depends_on:
+      mysql:
+        condition: service_healthy
+      elasticsearch:
+        condition: service_healthy
+      minio:
+        condition: service_started
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: svtkvt-frontend
+    ports:
+      - "4200:80"
+    depends_on:
+      - backend
+
+volumes:
+  mysql-data:
+  es-data:
+  minio-data:

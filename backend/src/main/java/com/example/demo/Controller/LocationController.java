@@ -84,8 +84,9 @@ public class LocationController {
         if (uploadedImage != null) {
             location.setImage(uploadedImage);
         } else {
-            location.setImage(imageService.getImageById(1L).orElse(null));
-            logger.info("No image provided, setting default image for new location.");
+            // Bez slike ostaje null — frontend prikazuje /defaultLoc.png. (Raniji fallback na
+            // getImageById(1L) je pogrešno lepio "default" sliku id=1 na svako mesto bez slike.)
+            logger.info("No image provided; location will use the frontend default placeholder.");
         }
 
         Location saved = locationService.save(location);

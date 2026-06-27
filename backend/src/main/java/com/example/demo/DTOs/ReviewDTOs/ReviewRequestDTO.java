@@ -2,7 +2,6 @@ package com.example.demo.DTOs.ReviewDTOs;
 
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
-import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Size;
 
 public class ReviewRequestDTO {
@@ -12,24 +11,21 @@ public class ReviewRequestDTO {
     @Size(max = 1000, message = "Komentar ne sme biti duži od 1000 karaktera.")
     private String commentText;
 
-    @NotNull(message = "Ocena performansa je obavezna.")
-    @Min(value = 1, message = "Ocena mora biti između 1 i 5.")
-    @Max(value = 5, message = "Ocena mora biti između 1 i 5.")
+    // K5: ocene su opcione ("nije neophodno oceniti svaku stavku"), skala 1–10.
+    @Min(value = 1, message = "Ocena mora biti između 1 i 10.")
+    @Max(value = 10, message = "Ocena mora biti između 1 i 10.")
     private Integer performanceRating;
 
-    @NotNull(message = "Ocena zvuka/svetla je obavezna.")
-    @Min(value = 1, message = "Ocena mora biti između 1 i 5.")
-    @Max(value = 5, message = "Ocena mora biti između 1 i 5.")
+    @Min(value = 1, message = "Ocena mora biti između 1 i 10.")
+    @Max(value = 10, message = "Ocena mora biti između 1 i 10.")
     private Integer soundLightingRating;
 
-    @NotNull(message = "Ocena prostora je obavezna.")
-    @Min(value = 1, message = "Ocena mora biti između 1 i 5.")
-    @Max(value = 5, message = "Ocena mora biti između 1 i 5.")
+    @Min(value = 1, message = "Ocena mora biti između 1 i 10.")
+    @Max(value = 10, message = "Ocena mora biti između 1 i 10.")
     private Integer venueRating;
 
-    @NotNull(message = "Ukupna ocena je obavezna.")
-    @Min(value = 1, message = "Ocena mora biti između 1 i 5.")
-    @Max(value = 5, message = "Ocena mora biti između 1 i 5.")
+    @Min(value = 1, message = "Ocena mora biti između 1 i 10.")
+    @Max(value = 10, message = "Ocena mora biti između 1 i 10.")
     private Integer overallRating;
 
 

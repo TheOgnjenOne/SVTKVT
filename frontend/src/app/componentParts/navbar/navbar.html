@@ -21,6 +21,9 @@
             <a class="nav-link" routerLink="/locations" routerLinkActive="active">Mesta</a>
           </li>
           <li class="nav-item">
+            <a class="nav-link" routerLink="/search" routerLinkActive="active">Pretraga</a>
+          </li>
+          <li class="nav-item">
             <a class="nav-link" routerLink="/events" routerLinkActive="active">Dogadjaji</a>
           </li>
           <li class="nav-item dropdown" *ngIf="(currentUser$ | async)?.role === 'MANAGER'">

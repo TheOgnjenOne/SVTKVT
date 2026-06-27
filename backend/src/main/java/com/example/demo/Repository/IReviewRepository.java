@@ -20,6 +20,16 @@ public interface IReviewRepository extends JpaRepository<Review, Long> {
     @Query("SELECT AVG(r.overallRating) FROM Review r WHERE r.location.id = :locationId AND r.deleted = false ")
     Double calculateAverageOverallRatingByLocationId(@Param("locationId") Long locationId);
 
+    // UES (ocena 10): prosečne ocene po kategorijama za ES indeks
+    @Query("SELECT AVG(r.performanceRating) FROM Review r WHERE r.location.id = :locationId AND r.deleted = false")
+    Double avgPerformanceByLocationId(@Param("locationId") Long locationId);
+
+    @Query("SELECT AVG(r.soundLightingRating) FROM Review r WHERE r.location.id = :locationId AND r.deleted = false")
+    Double avgSoundLightingByLocationId(@Param("locationId") Long locationId);
+
+    @Query("SELECT AVG(r.venueRating) FROM Review r WHERE r.location.id = :locationId AND r.deleted = false")
+    Double avgVenueByLocationId(@Param("locationId") Long locationId);
+
     @Query("SELECT COUNT(r) FROM Review r WHERE r.location.id = :locationId AND r.deleted = false")
     Long countByLocationIdAndDeletedFalse(@Param("locationId") Long locationId);
 

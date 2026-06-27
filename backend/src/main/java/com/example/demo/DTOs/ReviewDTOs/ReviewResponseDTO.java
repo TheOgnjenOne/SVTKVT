@@ -13,6 +13,11 @@ public class ReviewResponseDTO {
     private String commentText;
     private Double overallRating;
 
+    // K5: pojedinačne ocene po kategorijama (potrebno i za prikaz i za UES pretragu po kategorijama)
+    private Integer performanceRating;
+    private Integer soundLightingRating;
+    private Integer venueRating;
+
     private Long reviewedLocationId;
     private Long reviewedEventId;
 
@@ -61,6 +66,30 @@ public class ReviewResponseDTO {
 
     public void setOverallRating(Double overallRating) {
         this.overallRating = overallRating;
+    }
+
+    public Integer getPerformanceRating() {
+        return performanceRating;
+    }
+
+    public void setPerformanceRating(Integer performanceRating) {
+        this.performanceRating = performanceRating;
+    }
+
+    public Integer getSoundLightingRating() {
+        return soundLightingRating;
+    }
+
+    public void setSoundLightingRating(Integer soundLightingRating) {
+        this.soundLightingRating = soundLightingRating;
+    }
+
+    public Integer getVenueRating() {
+        return venueRating;
+    }
+
+    public void setVenueRating(Integer venueRating) {
+        this.venueRating = venueRating;
     }
 
     public Long getReviewedLocationId() {

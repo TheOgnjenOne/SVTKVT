@@ -21,6 +21,7 @@ public class LocationListDTO {
     private Double totalRating;
     private ImageResponseDTO image;
     private Long reviewCount;
+    private boolean hasPdf;
 
 
 }

@@ -34,6 +34,10 @@ public class Location {
     @Column(columnDefinition = "TEXT")
     private String description;
 
+    // UES: MinIO object key PDF opisa mesta (nullable; samo dodata kolona, šema ostaje kompatibilna).
+    @Column(name = "pdf_key")
+    private String pdfKey;
+
     @Column(name = "total_rating")
     private Double totalRating = 0.0;
 

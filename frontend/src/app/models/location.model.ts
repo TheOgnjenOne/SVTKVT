@@ -26,4 +26,5 @@ export interface LocationListDTO {
   createdAt?: string;
   image?: ImageResponse;
   reviewCount?: number;
+  hasPdf?: boolean;
 }

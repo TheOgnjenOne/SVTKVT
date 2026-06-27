@@ -5,6 +5,7 @@ import com.example.demo.DTOs.ReviewDTOs.ReviewRequestDTO;
 import com.example.demo.DTOs.ReviewDTOs.ReviewResponseDTO;
 import com.example.demo.Model.*;
 import com.example.demo.Repository.*;
+import com.example.demo.Services.ILocationIndexService;
 import com.example.demo.Services.IReviewService;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -26,6 +27,7 @@ public class ReviewServiceImpl implements IReviewService {
     private final ILocationRepository locationRepository;
     private final IEventRepository eventRepository;
     private final CommentServiceImpl commentService;
+    private final ILocationIndexService locationIndexService;
 
     @Autowired
     public ReviewServiceImpl(IReviewRepository reviewRepository,
@@ -33,12 +35,14 @@ public class ReviewServiceImpl implements IReviewService {
                              ILocationRepository locationRepository,
                              IEventRepository eventRepository,
                              ICommentRepository commentRepository,
-                             CommentServiceImpl commentService) {
+                             CommentServiceImpl commentService,
+                             ILocationIndexService locationIndexService) {
         this.reviewRepository = reviewRepository;
         this.userRepository = userRepository;
         this.locationRepository = locationRepository;
         this.eventRepository = eventRepository;
         this.commentService = commentService;
+        this.locationIndexService = locationIndexService;
     }
 
     @Override
@@ -104,12 +108,18 @@ public class ReviewServiceImpl implements IReviewService {
             locationRepository.flush();
         }
 
+        // UES: osveži ES dokument mesta (reviewCount + prosečne ocene po kategorijama)
+        locationIndexService.indexLocation(locationId);
+
         ReviewResponseDTO responseDTO = new ReviewResponseDTO();
         responseDTO.setId(savedReview.getId());
         responseDTO.setUserName(savedReview.getUser().getEmail());
         responseDTO.setSubmissionDate(savedReview.getCreatedAt());
         responseDTO.setCommentText(savedReview.getCommentText());
         responseDTO.setOverallRating(savedReview.getOverallRating() != null ? (double) savedReview.getOverallRating() : null);
+        responseDTO.setPerformanceRating(savedReview.getPerformanceRating());
+        responseDTO.setSoundLightingRating(savedReview.getSoundLightingRating());
+        responseDTO.setVenueRating(savedReview.getVenueRating());
         responseDTO.setReviewedLocationId(savedReview.getLocation().getId());
         responseDTO.setReviewedEventId(savedReview.getEvent().getId());
         responseDTO.setEventCount(savedReview.getEventCount());
@@ -167,6 +177,8 @@ public class ReviewServiceImpl implements IReviewService {
         reviewRepository.flush();
 
         recalculateLocationRating(locationId);
+        // UES: osveži ES dokument mesta nakon logičkog brisanja recenzije
+        locationIndexService.indexLocation(locationId);
     }
 
 
@@ -180,6 +192,8 @@ public class ReviewServiceImpl implements IReviewService {
         Review updatedReview = reviewRepository.save(review);
 
         recalculateLocationRating(review.getLocation().getId());
+        // UES: osveži ES dokument mesta nakon (s)krivanja recenzije
+        locationIndexService.indexLocation(review.getLocation().getId());
 
         return convertToReviewResponseDTO(updatedReview);
     }
@@ -205,6 +219,9 @@ public class ReviewServiceImpl implements IReviewService {
         dto.setSubmissionDate(review.getCreatedAt());
         dto.setCommentText(review.getCommentText());
         dto.setOverallRating(review.getOverallRating() != null ? (double) review.getOverallRating() : null);
+        dto.setPerformanceRating(review.getPerformanceRating());
+        dto.setSoundLightingRating(review.getSoundLightingRating());
+        dto.setVenueRating(review.getVenueRating());
         dto.setReviewedLocationId(review.getLocation().getId());
         dto.setReviewedEventId(review.getEvent().getId());
 

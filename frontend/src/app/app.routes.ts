@@ -56,6 +56,12 @@ export const routes: Routes = [
     canActivate: [AuthGuard]
   },
   {
+    path: 'search',
+    loadComponent: () =>
+      import('./Location/location-search/location-search').then(m => m.LocationSearchComponent),
+    canActivate: [AuthGuard]
+  },
+  {
     path: 'events',
     component: EventPage,
     canActivate: [AuthGuard]

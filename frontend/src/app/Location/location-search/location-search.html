@@ -1,0 +1,271 @@
+<div class="ues-search">
+
+  <!-- ===== TOP: glavna pretraga (kao OLX search bar) ===== -->
+  <section class="search-hero">
+    <div class="container">
+      <h1 class="hero-title">
+        <i class="bi bi-geo-alt-fill me-2"></i>Pronađi mesto
+      </h1>
+      <p class="hero-sub">
+        Pretraga po nazivu, opisu i tekstu iz PDF-a. Radi za ćirilicu i latinicu,
+        ne razlikuje velika/mala slova.
+      </p>
+
+      <div class="search-bar">
+        <i class="bi bi-search search-bar-icon"></i>
+        <input type="text" class="search-bar-input"
+               [(ngModel)]="request.naziv"
+               (keyup.enter)="doSearch()"
+               placeholder="Naziv mesta — npr. Beograd, Dom omladine">
+        <button class="search-bar-btn" (click)="doSearch()">
+          <i class="bi bi-search me-1"></i> Pretraži
+        </button>
+      </div>
+      <div class="hero-tips">
+        <span class="tip-label">Saveti za pretragu:</span>
+        <span class="tip-chip"><code>Beo*</code> — počinje na</span>
+        <span class="tip-chip"><code>~Beogrd</code> — približno, toleriše grešku u kucanju</span>
+        <span class="tip-chip"><code>"Dom omladine"</code> — tačna fraza</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="container search-body">
+    <div class="row g-4">
+
+      <!-- ===== LEVO: sidebar sa filterima ===== -->
+      <aside class="col-lg-3">
+
+        <button class="btn btn-outline-secondary w-100 d-lg-none mb-3"
+                type="button" data-bs-toggle="collapse" data-bs-target="#filterPanel">
+          <i class="bi bi-sliders me-1"></i> Filteri
+        </button>
+
+        <div class="collapse d-lg-block filter-panel" id="filterPanel">
+          <div class="filter-head">
+            <span><i class="bi bi-sliders me-2"></i>Filteri</span>
+            <button class="btn-reset" (click)="resetForm()" title="Resetuj filtere">
+              <i class="bi bi-arrow-counterclockwise"></i>
+            </button>
+          </div>
+
+          <!-- Tekstualna polja -->
+          <div class="filter-group">
+            <label class="filter-label">Opis mesta</label>
+            <input type="text" class="form-control form-control-sm"
+                   [(ngModel)]="request.opis" (keyup.enter)="doSearch()"
+                   placeholder="npr. koncerti, žurke">
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Opis iz PDF-a</label>
+            <input type="text" class="form-control form-control-sm"
+                   [(ngModel)]="request.pdfOpis" (keyup.enter)="doSearch()"
+                   placeholder="npr. bina, parking, kapacitet">
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Tip mesta</label>
+            <input type="text" class="form-control form-control-sm"
+                   [(ngModel)]="request.tipMesta" (keyup.enter)="doSearch()"
+                   placeholder="npr. klub, kafić">
+          </div>
+
+          <!-- Podudaranje uslova (BooleanQuery AND/OR, ali bez tehničkog žargona) -->
+          <div class="filter-group">
+            <label class="filter-label">Podudaranje uslova</label>
+            <div class="btn-group w-100" role="group">
+              <input type="radio" class="btn-check" name="op" id="opAnd"
+                     [value]="'AND'" [(ngModel)]="request.operator">
+              <label class="btn btn-sm btn-outline-primary" for="opAnd">Sve uslove</label>
+              <input type="radio" class="btn-check" name="op" id="opOr"
+                     [value]="'OR'" [(ngModel)]="request.operator">
+              <label class="btn btn-sm btn-outline-primary" for="opOr">Bilo koji</label>
+            </div>
+            <small class="filter-hint">Važi za: naziv, opis, opis iz PDF-a i tip mesta. Rangovi (broj utisaka, ocene) uvijek moraju biti zadovoljeni.</small>
+          </div>
+
+          <hr class="filter-sep">
+
+          <!-- Broj utisaka -->
+          <div class="filter-group">
+            <label class="filter-label">Broj utisaka</label>
+            <div class="range-row">
+              <input type="number" class="form-control form-control-sm"
+                     [(ngModel)]="request.reviewCountMin" placeholder="od">
+              <span class="range-dash">–</span>
+              <input type="number" class="form-control form-control-sm"
+                     [(ngModel)]="request.reviewCountMax" placeholder="do">
+            </div>
+          </div>
+
+          <hr class="filter-sep">
+
+          <!-- Ocene po kategorijama -->
+          <div class="filter-subtitle">Prosečna ocena (od – do)</div>
+
+          <div class="filter-group">
+            <label class="filter-label">Nastup</label>
+            <div class="range-row">
+              <input type="number" step="0.1" min="1" max="10" class="form-control form-control-sm"
+                     [(ngModel)]="request.avgNastupMin" placeholder="od">
+              <span class="range-dash">–</span>
+              <input type="number" step="0.1" min="1" max="10" class="form-control form-control-sm"
+                     [(ngModel)]="request.avgNastupMax" placeholder="do">
+            </div>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Zvuk i svetlo</label>
+            <div class="range-row">
+              <input type="number" step="0.1" min="1" max="10" class="form-control form-control-sm"
+                     [(ngModel)]="request.avgZvukSvetloMin" placeholder="od">
+              <span class="range-dash">–</span>
+              <input type="number" step="0.1" min="1" max="10" class="form-control form-control-sm"
+                     [(ngModel)]="request.avgZvukSvetloMax" placeholder="do">
+            </div>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Prostor</label>
+            <div class="range-row">
+              <input type="number" step="0.1" min="1" max="10" class="form-control form-control-sm"
+                     [(ngModel)]="request.avgProstorMin" placeholder="od">
+              <span class="range-dash">–</span>
+              <input type="number" step="0.1" min="1" max="10" class="form-control form-control-sm"
+                     [(ngModel)]="request.avgProstorMax" placeholder="do">
+            </div>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Ukupan utisak</label>
+            <div class="range-row">
+              <input type="number" step="0.1" min="1" max="10" class="form-control form-control-sm"
+                     [(ngModel)]="request.avgUkupnoMin" placeholder="od">
+              <span class="range-dash">–</span>
+              <input type="number" step="0.1" min="1" max="10" class="form-control form-control-sm"
+                     [(ngModel)]="request.avgUkupnoMax" placeholder="do">
+            </div>
+          </div>
+
+          <div class="filter-actions">
+            <button class="btn btn-primary w-100" (click)="doSearch()">
+              <i class="bi bi-funnel me-1"></i> Primeni filtere
+            </button>
+            <button class="btn btn-link w-100 text-muted" (click)="resetForm()">
+              Resetuj sve
+            </button>
+          </div>
+        </div>
+
+        <!-- PDF upload (admin / menadžer) -->
+        <div class="upload-panel mt-3" *ngIf="isManagerOrAdmin">
+          <div class="upload-head">
+            <i class="bi bi-file-earmark-pdf-fill me-2"></i>Postavi PDF opis mesta
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">Mesto</label>
+            <select class="form-select form-select-sm" [(ngModel)]="selectedLocationId">
+              <option [ngValue]="null" disabled>-- izaberi mesto --</option>
+              <option *ngFor="let loc of manageableLocations" [ngValue]="loc.id">{{ loc.name }}</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label class="filter-label">PDF fajl</label>
+            <input type="file" class="form-control form-control-sm" accept="application/pdf"
+                   (change)="onPdfSelected($event)">
+          </div>
+          <button class="btn btn-sm btn-info w-100" (click)="uploadPdf()">
+            <i class="bi bi-upload me-1"></i> Postavi i indeksiraj
+          </button>
+          <div class="text-success small mt-2" *ngIf="uploadMessage">{{ uploadMessage }}</div>
+          <div class="text-danger small mt-2" *ngIf="uploadError">{{ uploadError }}</div>
+        </div>
+
+      </aside>
+
+      <!-- ===== DESNO: rezultati ===== -->
+      <main class="col-lg-9">
+
+        <div class="results-bar">
+          <div>
+            <h2 class="results-title">{{ resultsTitle }}</h2>
+            <span class="results-count" *ngIf="searched && !loading">
+              {{ total }} rezultat(a)
+            </span>
+          </div>
+          <div class="sort-control">
+            <label class="sort-label">Sortiraj:</label>
+            <select class="form-select form-select-sm" [(ngModel)]="request.sortBy" (change)="doSearch()">
+              <option value="">Najrelevantnije</option>
+              <option value="naziv">Po nazivu</option>
+            </select>
+            <select class="form-select form-select-sm" [(ngModel)]="request.sortDir"
+                    [disabled]="!request.sortBy" (change)="doSearch()">
+              <option value="asc">A–Š</option>
+              <option value="desc">Š–A</option>
+            </select>
+          </div>
+        </div>
+
+        <div *ngIf="loading" class="state-block">
+          <div class="spinner-border text-primary" role="status"></div>
+        </div>
+
+        <div class="alert alert-danger" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+        <div *ngIf="!loading && searched && results.length === 0 && !errorMessage" class="state-block empty-state">
+          <i class="bi bi-inbox"></i>
+          <p>Nema rezultata za zadate kriterijume.</p>
+          <button class="btn btn-sm btn-outline-secondary" (click)="resetForm()">Resetuj filtere</button>
+        </div>
+
+        <!-- Listing kartice -->
+        <div class="listings" *ngIf="!loading">
+          <article class="listing" *ngFor="let r of results">
+
+            <div class="listing-thumb">
+              <img [src]="imageUrl(r.imageId)"
+                   (error)="onImageError($event)"
+                   alt="{{ r.naziv }}">
+            </div>
+
+            <div class="listing-content">
+              <div class="listing-head">
+                <h3 class="listing-title">{{ r.naziv }}</h3>
+                <span class="rating-pill" *ngIf="r.prosecnaOcena != null">
+                  <i class="bi bi-star-fill"></i> {{ r.prosecnaOcena | number:'1.1-1' }}
+                </span>
+              </div>
+
+              <div class="listing-meta">
+                <i class="bi bi-geo-alt"></i> {{ r.adresa }}
+                <span class="type-tag" *ngIf="r.tipMesta">{{ r.tipMesta }}</span>
+              </div>
+
+              <p class="listing-desc" *ngIf="r.opis">{{ r.opis }}</p>
+
+              <!-- Highlight sažeci (ocena 10) -->
+              <div class="highlight-box" *ngIf="r.highlights && r.highlights.length">
+                <div class="hl-line" *ngFor="let h of r.highlights" [innerHTML]="h"></div>
+              </div>
+
+              <div class="listing-stats">
+                <span class="stat-chip"><i class="bi bi-chat-square-text"></i> {{ r.reviewCount }} utisaka</span>
+                <span class="stat-chip" *ngIf="r.avgNastup != null">Nastup {{ r.avgNastup | number:'1.1-1' }}</span>
+                <span class="stat-chip" *ngIf="r.avgZvukSvetlo != null">Zvuk/svetlo {{ r.avgZvukSvetlo | number:'1.1-1' }}</span>
+                <span class="stat-chip" *ngIf="r.avgProstor != null">Prostor {{ r.avgProstor | number:'1.1-1' }}</span>
+                <span class="stat-chip" *ngIf="r.avgUkupno != null">Ukupno {{ r.avgUkupno | number:'1.1-1' }}</span>
+              </div>
+
+              <div class="listing-actions">
+                <button class="btn btn-sm btn-outline-danger" *ngIf="r.hasPdf" (click)="downloadPdf(r)">
+                  <i class="bi bi-file-earmark-pdf me-1"></i> Preuzmi PDF
+                </button>
+                <button class="btn btn-sm btn-outline-primary" (click)="moreLikeThis(r)">
+                  <i class="bi bi-stars me-1"></i> Slična mesta
+                </button>
+              </div>
+            </div>
+          </article>
+        </div>
+
+      </main>
+    </div>
+  </div>
+</div>

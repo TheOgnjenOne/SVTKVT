@@ -9,11 +9,13 @@ import { AdminService, ManagerInfo } from '../../services/admin/admin';
 import {Router} from '@angular/router';
 import {LocationReview} from '../location-review/location-review';
 import {AllReviewsModalComponent} from '../../componentParts/all-reviews-modal/all-reviews-modal';
+import { SearchService } from '../../services/search/search-service';
 
 interface LocationUI extends Location {
   showDetails: boolean;
   reviewCount?: number;
   isManagedByCurrentUser?: boolean;
+  hasPdfLoaded?: boolean;
 }
 
 interface AvailableUser {
@@ -71,11 +73,17 @@ export class LocationsComponent implements OnInit, OnDestroy {
   searchAddress: string = '';
   searchType: string = '';
 
+  pdfFiles: { [locationId: number]: File | null } = {};
+  pdfMessages: { [locationId: number]: string } = {};
+  pdfErrors: { [locationId: number]: string } = {};
+  locationsWithPdf: Set<number> = new Set();
+
   constructor(
     private locationService: LocationService,
     private authService: AuthService,
     private adminService: AdminService,
-    private router: Router
+    private router: Router,
+    private searchService: SearchService
   ) {
   }
 
@@ -92,7 +100,8 @@ export class LocationsComponent implements OnInit, OnDestroy {
   }
 
   getLocationImage(loc: LocationUI): string {
-    return loc.image?.path ? 'http://localhost:8080/uploads/' + loc.image.path : '/defaultLoc.png';
+    // UES: slike se sada serviraju iz MinIO preko /api/images/{id}, ne sa fajl-sistema (/uploads/).
+    return loc.image?.id ? `http://localhost:8080/api/images/${loc.image.id}` : '/defaultLoc.png';
   }
   onImageError(event: Event) {
     const img = event.target as HTMLImageElement;
@@ -122,11 +131,14 @@ export class LocationsComponent implements OnInit, OnDestroy {
           if (loc.id !== undefined && loc.id !== null) {
             showDetailsStatus = detailsState[loc.id] || false;
           }
+          const hasPdfLoaded = !!(loc as any).hasPdf;
+          if (hasPdfLoaded && loc.id) this.locationsWithPdf.add(loc.id);
           return {
             ...loc,
             showDetails: showDetailsStatus,
             isManagedByCurrentUser: isManagedByCurrentUser,
-            reviewCount: finalReviewCount
+            reviewCount: finalReviewCount,
+            hasPdfLoaded
           };
         });
         this.loading = false;
@@ -434,5 +446,31 @@ export class LocationsComponent implements OnInit, OnDestroy {
     }
 
     return locations;
+  }
+
+  onPdfSelected(event: Event, locationId: number): void {
+    const input = event.target as HTMLInputElement;
+    this.pdfFiles[locationId] = input.files?.length ? input.files[0] : null;
+  }
+
+  uploadPdf(locationId: number): void {
+    const file = this.pdfFiles[locationId];
+    this.pdfMessages[locationId] = '';
+    this.pdfErrors[locationId] = '';
+    if (!file) { this.pdfErrors[locationId] = 'Izaberi PDF fajl.'; return; }
+    this.searchService.uploadPdf(locationId, file).subscribe({
+      next: () => {
+        this.pdfMessages[locationId] = this.locationsWithPdf.has(locationId)
+          ? 'PDF zamenjen i ponovo indeksiran.'
+          : 'PDF uspešno postavljen i indeksiran.';
+        this.locationsWithPdf.add(locationId);
+        this.pdfFiles[locationId] = null;
+      },
+      error: () => this.pdfErrors[locationId] = 'Greška pri postavljanju PDF-a.'
+    });
+  }
+
+  hasPdf(locationId: number): boolean {
+    return this.locationsWithPdf.has(locationId);
   }
 }
